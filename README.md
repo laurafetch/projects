@@ -1,6 +1,6 @@
 Hi, I'm Laura!
 
-This repo contains projects I worked through Codecademy and nucamp.  They are primarily python applications.
+This repo contains projects I worked on through Codecademy and nucamp.  They are primarily python applications.
 
 ## MyPantry  
 A python application to track my food inventory.
