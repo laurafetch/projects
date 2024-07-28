@@ -1,5 +1,3 @@
-# projects
-
 Hi, I'm Laura!
 
 This repo contains projects I worked through Codecademy and nucamp.  They are primarily python applications.
