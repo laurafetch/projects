@@ -48,3 +48,6 @@ ALTER TABLE shopping_trips ADD CONSTRAINT fk_shopping_trips_locations FOREIGN KE
 ALTER TABLE shopping_trip_items ADD CONSTRAINT fk_shopping_trip_items_shopping_trips FOREIGN KEY (shopping_trip_id) REFERENCES shopping_trips ON DELETE SET NULL;
 
 ALTER TABLE inventory ADD CONSTRAINT fk_inventory_shopping_trip_items FOREIGN KEY (shopping_trip_item_id) REFERENCES shopping_trip_items ON DELETE SET NULL;
+
+--Add Index
+create index inventory_expiration_date on inventory (expiration_date);
