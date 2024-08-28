@@ -23,7 +23,7 @@ class index(APIView):
     template_name = 'shopping_list/index.html'
 
     def get(self, request):
-        queryset = Food.objects.all()
+        queryset = Inventory.objects.all()
         return Response({'foods': queryset})
 
 #Shopping list

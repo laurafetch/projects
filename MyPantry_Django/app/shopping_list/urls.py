@@ -6,7 +6,7 @@ from django.conf import settings
 urlpatterns = [
     #path('', tutorials_views.index, name='home'),
     path('', shopping_list_views.index.as_view(), name='home'),
-    path('api/foods/', shopping_list_views.inventory_list)
+    path('api/foods/', shopping_list_views.inventory_list, name='inventory_list')
     # ,
     # path('api/tutorials/<int:pk>/', shopping_list_views.tutorial_detail),
     # path('api/tutorials/published/', shopping_list_views.tutorial_list_published)
