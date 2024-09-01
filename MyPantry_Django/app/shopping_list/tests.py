@@ -9,12 +9,14 @@ from shopping_list.models import ShoppingList
 def test_simple_pass():
     assert True
 
-# Test access to homepage
-def test_homepage_access():
-          url = reverse('inventory_list')
-          assert url == "api/foods/"
 
-# Test endpoint
+# Test adding item
 @pytest.mark.django_db
-def test_tbd():
-       pass
+def test_create_item():
+    request = ShoppingList.objects.create(
+	food_id = 2,
+	num_units = 1,
+	date_added = "2024-08-20"
+)
+    assert request.food_id == "2"
+    

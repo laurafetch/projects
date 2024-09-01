@@ -18,22 +18,22 @@ from rest_framework.decorators import api_view
 #     return render(request, "shopping_list/index.html", {'foods': queryset})
 
 
-class index(APIView):
-    renderer_classes = [TemplateHTMLRenderer]
-    template_name = 'shopping_list/index.html'
+# class index(APIView):
+#     renderer_classes = [TemplateHTMLRenderer]
+#     template_name = 'tutorials/index.html'
 
-    def get(self, request):
-        queryset = Inventory.objects.all()
-        return Response({'foods': queryset})
+#     def get(self, request):
+#         queryset = Inventory.objects.all()
+#         return Response({'foods': queryset})
 
-#Shopping list
-class shopping_list(APIView):
-    renderer_classes = [TemplateHTMLRenderer]
-    template_name = 'shopping_list/tutorial_list.html'
+# #Shopping list
+# class shopping_list(APIView):
+#     renderer_classes = [TemplateHTMLRenderer]
+#     template_name = 'tutorials/tutorial_list.html'
 
-    def get(self, request):
-        queryset = ShoppingList.objects.all()
-        return Response({'items': queryset})
+#     def get(self, request):
+#         queryset = ShoppingList.objects.all()
+#         return Response({'items': queryset})
 
 #Get food inventory
 # @api_view('GET')
@@ -46,16 +46,16 @@ class shopping_list(APIView):
 #     return JsonResponse(inventory_serializer.data, safe=False)
 
 # Get shopping list
-# api/shopping_list/
-@api_view('GET')
+# /
+@api_view(['GET'])
 def get_list(request):
     current_list = ShoppingList.objects.all()
-    shopping_list_serializer = ShoppingListSerializer(data=current_list)
-    return JsonResponse(shopping_list_serializer.data)
+    shopping_list_serializer = ShoppingListSerializer(current_list, many=True)
+    return JsonResponse(shopping_list_serializer.data, safe=False)
 
 # Add item to shopping list
 # api/shopping_list/
-@api_view('POST')
+@api_view(['POST'])
 def add_item(request):
     item_data = JSONParser().parse(request)
     shopping_list_serializer = ShoppingListSerializer(data=item_data)
@@ -66,16 +66,16 @@ def add_item(request):
 
 # Edit/Remove item shopping list
 # api/shopping_list/<int:pk>/
-@api_view('PUT', 'DELETE')
+@api_view(['PATCH', 'DELETE'])
 def edit_item(request, pk):
     try:
         item = ShoppingList.objects.get(pk=pk)
     except ShoppingList.DoesNotExist:
         return JsonResponse({'message': 'The item is not in the shopping list'}, status=status.HTTP_404_NOT_FOUND)
     
-    if request.method == 'PUT':
+    if request.method == 'PATCH':
         item_data = JSONParser().parse(request)
-        shopping_list_serializer = ShoppingListSerializer(data=item_data)
+        shopping_list_serializer = ShoppingListSerializer(item, data=item_data, partial=True)
         if shopping_list_serializer.is_valid():
             shopping_list_serializer.save()
             return JsonResponse(shopping_list_serializer.data)
