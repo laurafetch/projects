@@ -12,10 +12,10 @@ from shopping_list.serializers import FoodSerializer, ShoppingListSerializer, In
 from rest_framework.decorators import api_view
 
 #Inventory list
-def index(request):
-    print("Test Inventory")
-    queryset = Inventory.objects.all()
-    return render(request, "shopping_list/index.html", {'foods': queryset})
+# def index(request):
+#     print("Test Inventory")
+#     queryset = Inventory.objects.all()
+#     return render(request, "shopping_list/index.html", {'foods': queryset})
 
 
 class index(APIView):
@@ -35,12 +35,52 @@ class shopping_list(APIView):
         queryset = ShoppingList.objects.all()
         return Response({'items': queryset})
 
+#Get food inventory
+# @api_view('GET')
+# def inventory_list(request):
+#     foods = Inventory.objects.all()
+#     name = request.GET.get('food_id', None)
+#     if name is not None:
+#         foods = foods.filter(title__icontains=name)
+#     inventory_serializer = InventorySerializer(foods, many=True)
+#     return JsonResponse(inventory_serializer.data, safe=False)
 
+# Get shopping list
+# api/shopping_list/
 @api_view('GET')
-def inventory_list(request):
-    foods = Inventory.objects.all()
-    name = request.GET.get('food_id', None)
-    if name is not None:
-        foods = foods.filter(title__icontains=name)
-    inventory_serializer = InventorySerializer(foods, many=True)
-    return JsonResponse(inventory_serializer.data, safe=False)
+def get_list(request):
+    current_list = ShoppingList.objects.all()
+    shopping_list_serializer = ShoppingListSerializer(data=current_list)
+    return JsonResponse(shopping_list_serializer.data)
+
+# Add item to shopping list
+# api/shopping_list/
+@api_view('POST')
+def add_item(request):
+    item_data = JSONParser().parse(request)
+    shopping_list_serializer = ShoppingListSerializer(data=item_data)
+    if shopping_list_serializer.is_valid():
+        shopping_list_serializer.save()
+        return JsonResponse(shopping_list_serializer.data, status=status.HTTP_201_CREATED)
+    return JsonResponse(shopping_list_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# Edit/Remove item shopping list
+# api/shopping_list/<int:pk>/
+@api_view('PUT', 'DELETE')
+def edit_item(request, pk):
+    try:
+        item = ShoppingList.objects.get(pk=pk)
+    except ShoppingList.DoesNotExist:
+        return JsonResponse({'message': 'The item is not in the shopping list'}, status=status.HTTP_404_NOT_FOUND)
+    
+    if request.method == 'PUT':
+        item_data = JSONParser().parse(request)
+        shopping_list_serializer = ShoppingListSerializer(data=item_data)
+        if shopping_list_serializer.is_valid():
+            shopping_list_serializer.save()
+            return JsonResponse(shopping_list_serializer.data)
+        return JsonResponse(shopping_list_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    if request.method == 'DELETE':
+        item.delete()
+        return JsonResponse({'message': 'Item was removed successfully!'}, status=status.HTTP_204_NO_CONTENT)

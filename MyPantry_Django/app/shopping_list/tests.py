@@ -12,7 +12,7 @@ def test_simple_pass():
 # Test access to homepage
 def test_homepage_access():
           url = reverse('inventory_list')
-          assert url == "/"
+          assert url == "api/foods/"
 
 # Test endpoint
 @pytest.mark.django_db
