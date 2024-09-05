@@ -1,0 +1,131 @@
+REGION=us-central1
+PGSERVER=pg
+DBNAME=my_pantry
+REPO=mypantry-repo
+IMAGE=mypantry
+PROJECT_ID=$(gcloud config get-value project)
+PROJECT_NUM=$(gcloud projects describe $PROJECT_ID --format 'value(projectNumber)')
+
+echo $REGION
+echo $PGSERVER
+echo $DBNAME
+echo $REPO
+echo $IMAGE
+echo $PROJECT_ID
+echo $PROJECT_NUM
+
+gcloud services enable \
+  run.googleapis.com \
+  sql-component.googleapis.com \
+  sqladmin.googleapis.com \
+  compute.googleapis.com \
+  cloudbuild.googleapis.com \
+  secretmanager.googleapis.com \
+  artifactregistry.googleapis.com
+
+--Create postgres server
+gcloud sql instances create $PGSERVER \
+  --project $PROJECT_ID \
+  --database-version POSTGRES_13 \
+  --tier db-f1-micro \
+  --region $REGION
+
+gcloud sql databases create $DBNAME -i $PGSERVER
+
+--Create user and password
+PGPASS="$(cat /dev/urandom | LC_ALL=C tr -dc 'a-zA-Z0-9' | fold -w 30 | head -n 1)"
+echo $PGPASS
+
+gcloud sql users create pguser -i $PGSERVER --password=$PGPASS
+
+--Cloud build to access server
+CLOUDBUILD=${PROJECT_NUM}@cloudbuild.gserviceaccount.com
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member serviceAccount:${CLOUDBUILD} \
+    --role roles/cloudsql.client
+
+--Set up bucket
+GS_BUCKET_NAME=${PROJECT_ID}-storage
+
+gsutil mb -l us-central1 gs://${GS_BUCKET_NAME}
+
+echo $GS_BUCKET_NAME
+
+--Secret Manager
+echo DATABASE_URL=\"postgres://pguser:${PGPASS}@//cloudsql/${PROJECT_ID}:${REGION}:${PGSERVER}/${DBNAME}\" > .env
+echo GS_BUCKET_NAME=\"${GS_BUCKET_NAME}\" >> .env
+echo SECRET_KEY=\"$(cat /dev/urandom | LC_ALL=C tr -dc 'a-zA-Z0-9' | fold -w 50 | head -n 1)\" >> .env
+echo DEBUG=\"True\" >> .env
+
+cat .env
+
+gcloud secrets create application_settings --data-file=.env
+
+--Connect Cloud Build and Run with secret
+CLOUDRUN=${PROJECT_NUM}-compute@developer.gserviceaccount.com
+
+echo $CLOUDRUN
+echo $CLOUDBUILD
+
+gcloud secrets add-iam-policy-binding application_settings \
+  --member serviceAccount:${CLOUDRUN} \
+  --role roles/secretmanager.secretAccessor
+
+gcloud secrets add-iam-policy-binding application_settings \
+  --member serviceAccount:${CLOUDBUILD} \
+  --role roles/secretmanager.secretAccessor
+
+--Set up Django and Docker files
+--Upload zip file
+
+unzip -q filename.zip
+
+cd ls
+
+--Edited existing DockerFile since previously using yml file
+
+--Build and push to artifact registry
+gcloud artifacts repositories create $REPO --repository-format=docker --location=$REGION
+
+gcloud artifacts repositories list
+
+IMAGE_LOCATION=${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/${IMAGE}
+echo $IMAGE_LOCATION
+
+gcloud builds submit --tag ${IMAGE_LOCATION}
+
+--Run migrations
+SQL_SERVER=${PROJECT_ID}:${REGION}:${PGSERVER}
+echo $SQL_SERVER
+
+touch cloudmigrate.yml
+cloudshell edit cloudmigrate.yml
+
+Add to file
+/
+steps:
+
+- name: "gcr.io/google-appengine/exec-wrapper"
+  args: ["-i", "${_IMAGE_LOCATION}",
+         "-s", "${_SQL_SERVER}",
+         "--", "python", "manage.py", "migrate"]
+
+- name: "gcr.io/google-appengine/exec-wrapper"
+  args: ["-i", "${_IMAGE_LOCATION}",
+         "-s", "${_SQL_SERVER}",
+         "--", "python", "manage.py", "collectstatic", "--no-input"]
+/
+
+gcloud builds submit --config cloudmigrate.yml \
+  --substitutions _IMAGE_LOCATION=$IMAGE_LOCATION,_SQL_SERVER=$SQL_SERVER
+
+--Deploy and test!
+gcloud run deploy $IMAGE \
+  --platform managed \
+  --region $REGION \
+  --image $IMAGE_LOCATION \
+  --set-cloudsql-instances $SQL_SERVER \
+  --allow-unauthenticated
+
+--Open insomnia to test endpoints
