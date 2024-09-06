@@ -79,11 +79,9 @@ gcloud secrets add-iam-policy-binding application_settings \
 --Set up Django and Docker files
 --Upload zip file
 
-unzip -q filename.zip
+unzip -q app.zip
 
 cd ls
-
---Edited existing DockerFile since previously using yml file
 
 --Build and push to artifact registry
 gcloud artifacts repositories create $REPO --repository-format=docker --location=$REGION
@@ -94,6 +92,7 @@ IMAGE_LOCATION=${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/${IMAGE}
 echo $IMAGE_LOCATION
 
 gcloud builds submit --tag ${IMAGE_LOCATION}
+
 
 --Run migrations
 SQL_SERVER=${PROJECT_ID}:${REGION}:${PGSERVER}
