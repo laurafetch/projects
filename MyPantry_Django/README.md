@@ -9,22 +9,16 @@ This version of the application was created to using Django and Docker.  It is f
 
 Endpoint | Path | Method(s) | Parameter(s)
 ---|---|---|---
-index|/foods|GET|n/a
+inventory|/foods|GET|n/a
 shopping_list|/shopping|GET|n/a
 add_item|/shopping|POST|food_id INT, num_units INT, date_added DATETIME
 remove_item|/shopping/{food_id}|DELETE|n/a
-change_num_units|/shopping/{food_id}|PUT|food_id INT, num_units INT
+edit_item|/shopping/{food_id}|PATCH|food_id INT, num_units INT
 
 ## Description
 
-The application is an active work in progress.
+The application builds upon the same application I created using Flask.  This expands into Django, introduces html files, Dockerfile and Docker Compose.  Additionally, I deployed the application to Google Cloud.  Intructions and screenshots are in the deployment_gcp folder.
 
-## To Do
-
-* Create seed data
-* Get initial endpoint (inventory) working
-* Figure out how to configure html files
-* Create code for remaining endpoints
 
 ## Enhancements
 
